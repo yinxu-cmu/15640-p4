@@ -8,4 +8,6 @@ k=2
 
 
 echo ********GENERATING $b INPUT POINTS EACH IN $k CLUSTERS 
-python ./randomclustergen/generaterawdata.py -c $k  -p $b -o input/cluster.csv
+python ./randomclustergen/generaterawdata.py -c $k  -p $b -o input/data_points.csv
+
+python ./randomdnagen/generaterawdata.py -c $k -d $b -o input/dna_stands.csv
