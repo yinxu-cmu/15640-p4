@@ -54,7 +54,7 @@ def handleArgs(args):
         elif key == '-p':
             numPoints = int(val)
         elif key == '-o':
-            output = val
+            output = val.strip()
         # now, the optional argument
         elif key == '-v':
             maxValue = float(val)
@@ -103,3 +103,5 @@ for i in range(0, numClusters):
         x, y = numpy.random.normal(cluster, variance)
         # write the points out
         writer.writerow([x, y])
+
+print 'finish generate points csv file'

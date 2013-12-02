@@ -57,7 +57,7 @@ def handleArgs(args):
         elif key == '-d':
             numDNA = int(val)
         elif key == '-o':
-            output = val
+            output = val.strip()
         # now, the optional argument
         elif key == '-v':
             length = int(val)
@@ -106,3 +106,5 @@ for i in range(0, numClusters):
     for j in range(0, numDNA):
         writer.write(generateDNA(cluster, variance))
         writer.write('\n')
+
+print 'finish generate DNA csv file'

@@ -10,6 +10,7 @@ public class ClusterDNA {
 
 	}
 
+	@SuppressWarnings("unchecked")
 	public ClusterDNA(ArrayList<String> dnaStrands, String outputFile, int numClusters) throws IOException {
 		// get the DNA strands length
 		DNAlength = dnaStrands.get(0).length();
@@ -38,8 +39,8 @@ public class ClusterDNA {
 			}
 		}
 		
-		for (String centroid : centroids)
-			System.out.println(centroid);
+//		for (String centroid : centroids)
+//			System.out.println(centroid);
 		
 		// write the result into the output file
 		FileWriter writer = new FileWriter(outputFile);
@@ -128,7 +129,6 @@ public class ClusterDNA {
 
 	private Random random = new Random();
 
-	@SuppressWarnings("unused")
 	private int numCluster = 2;
 	private int numInterations = 100;
 	private String[] centroids;
