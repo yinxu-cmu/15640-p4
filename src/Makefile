@@ -1,15 +1,15 @@
-JFLAGS = -d ../bin
-JC = javac
+JFLAGS = -d ../bin -cp "../bin:/usr/lib64/openmpi/lib"
+JC = mpijavac
 .SUFFIXES: .java .class
 .java.class:
 	$(JC) $(JFLAGS) $*.java
 
 CLASSES = \
-	ReadCSV.java	\
 	Point.java	\
+	ReadCSV.java	\
 	ClusterPoints.java	\
 	ClusterDNA.java	\
-	Kmeans.java	
+	Kmeans.java
 
 build: classes
 

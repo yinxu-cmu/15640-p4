@@ -17,14 +17,14 @@ public class ReadCSV {
 		String[] values = null;
 		ArrayList retList = new ArrayList();
 
-		if (this.option == Kmeans.point) {
+		if (this.option == 'p') {
 			while ((line = br.readLine()) != null) {
 				values = line.split(",");
 				Point point = new Point(Double.parseDouble(values[0]),
 						Double.parseDouble(values[1]));
 				retList.add(point);
 			}
-		} else if (this.option == Kmeans.dna) {
+		} else if (this.option == 'd') {
 			while ((line = br.readLine()) != null) {
 				values = line.split(",");
 				retList.add(values[0]);
