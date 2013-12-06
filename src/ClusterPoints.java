@@ -2,6 +2,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
+import mpi.*;
 
 public class ClusterPoints {
 
@@ -11,7 +12,7 @@ public class ClusterPoints {
 
 	@SuppressWarnings({ "unchecked" })
 	public ClusterPoints(ArrayList<Point> points, String outputFile, int numCluster)
-			throws IOException {
+			throws Exception {
 
 		// get the min, max of x & y
 		double x, y;
@@ -44,12 +45,42 @@ public class ClusterPoints {
 		int numPoints = points.size();
 		clusters = new ArrayList[numCluster];
 
+		int myRank;
+		int senderRank;
+		int dest;
+		int size;
+
+		myRank = MPI.COMM_WORLD.Rank();
+		size = MPI.COMM_WORLD.Size();
+
 		for (int i = 0; i < numInterations; i++) {
 			for (int j = 0; j < numCluster; j++)
 				clusters[j] = new ArrayList<Point>();
-			
+
+			int numPointsSlave = numPoints / (size - 1);
+			int[] point2clusterMaster = new int[numPoints];
+			if (myRank != 0) {
+				int[] point2clusterSlave = new int[numPointsSlave];
+				for (int j = 0; j < numPointsSlave; j++) {
+					point2clusterSlave[j] = getNearestCentroid(points
+							.get(((myRank - 1) * numPointsSlave) + j));
+				}
+
+				MPI.COMM_WORLD.Send(point2clusterSlave, 0, numPointsSlave, MPI.INT, 0, 100);
+
+			} else {
+				for (senderRank = 1; senderRank < size; senderRank++) {
+					int[] point2clusterSlave = new int[numPointsSlave];
+					Status s = MPI.COMM_WORLD.Recv(point2clusterSlave, 0, numPointsSlave, MPI.INT,
+							MPI.ANY_SOURCE, 100);
+					for (int j = 0; j < numPointsSlave; j++) {
+						point2clusterMaster[((s.source - 1) * numPointsSlave) + j] = point2clusterSlave[j];
+					}
+				}
+			}
+
 			for (int j = 0; j < numPoints; j++) {
-				clusters[getNearestCentroid(points.get(j))].add(points.get(j));
+				clusters[point2clusterMaster[j]].add(points.get(j));
 			}
 
 			// recalculate the each centroid
@@ -57,7 +88,7 @@ public class ClusterPoints {
 				centroids[j] = recalculateCentroid(clusters[j]);
 			}
 		}
-		
+
 		// write the result into the output file
 		FileWriter writer = new FileWriter(outputFile);
 		for (int i = 0; i < numCluster; i++) {
@@ -72,7 +103,7 @@ public class ClusterPoints {
 			}
 		}
 		writer.close();
-		
+
 	}
 
 	/**
@@ -108,7 +139,7 @@ public class ClusterPoints {
 			sumX += point.getX();
 			sumY += point.getY();
 		}
-		
+
 		int numPoints = points.size();
 		Point centroid = new Point(sumX / numPoints, sumY / numPoints);
 		return centroid;
@@ -123,7 +154,7 @@ public class ClusterPoints {
 
 	@SuppressWarnings("unused")
 	private int numCluster = 2;
-	private int numInterations = 100;
+	private int numInterations = 10;
 	private Point[] centroids;
 	private ArrayList<Point>[] clusters;
 }

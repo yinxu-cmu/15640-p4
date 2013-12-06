@@ -15,42 +15,42 @@ public class Kmeans {
 		// TODO Auto-generated method stub
 		
 		MPI.Init(args);
-		///
-		int myRank;
-		int senderRank;
-		int dest;
-		int tag = 50;
-		int size;
-		
-		Random random = new Random();
-		
-		myRank = MPI.COMM_WORLD.Rank();
-		size = MPI.COMM_WORLD.Size();
-		int[] buf = new int[1];
-		
-		if (myRank != 0) {
-			
-	        MPI.COMM_WORLD.Recv(buf, 0, buf.length, MPI.INT, 0, tag);
-	        System.out.println("rec all");
-	        Thread.sleep(random.nextInt(2000));
-	        buf[0] = myRank;
-	        MPI.COMM_WORLD.Send(buf, 0, 1, MPI.INT,0, 100);
-	        System.out.println("sent from"+myRank);
-	        
-		} else { // master
-			
-			for (senderRank = 1; senderRank < size; senderRank++) {
-				MPI.COMM_WORLD.Send(buf, 0, 1, MPI.INT, senderRank, tag);
-				System.out.println("MASTER sent all");
-			}
-			
-			for (senderRank = 1; senderRank < size; senderRank++) {
-				Status s = MPI.COMM_WORLD.Recv(buf, 0, 1, MPI.INT, MPI.ANY_SOURCE, 100);
-				System.out.println("master received from: " + s.source + buf[0]+ " : ");
-			}
-						
-		}
-		///
+//		///
+//		int myRank;
+//		int senderRank;
+//		int dest;
+//		int tag = 50;
+//		int size;
+//		
+//		Random random = new Random();
+//		
+//		myRank = MPI.COMM_WORLD.Rank();
+//		size = MPI.COMM_WORLD.Size();
+//		int[] buf = new int[1];
+//		
+//		if (myRank != 0) {
+//			
+//	        MPI.COMM_WORLD.Recv(buf, 0, buf.length, MPI.INT, 0, tag);
+//	        System.out.println("rec all");
+//	        Thread.sleep(random.nextInt(2000));
+//	        buf[0] = myRank;
+//	        MPI.COMM_WORLD.Send(buf, 0, 1, MPI.INT,0, 100);
+//	        System.out.println("sent from"+myRank);
+//	        
+//		} else { // master
+//			
+//			for (senderRank = 1; senderRank < size; senderRank++) {
+//				MPI.COMM_WORLD.Send(buf, 0, 1, MPI.INT, senderRank, tag);
+//				System.out.println("MASTER sent all");
+//			}
+//			
+//			for (senderRank = 1; senderRank < size; senderRank++) {
+//				Status s = MPI.COMM_WORLD.Recv(buf, 0, 1, MPI.INT, MPI.ANY_SOURCE, 100);
+//				System.out.println("master received from: " + s.source + buf[0]+ " : ");
+//			}
+//						
+//		}
+//		///
 		
 		int numClusters = 2;
 		

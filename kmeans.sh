@@ -1,13 +1,13 @@
 #!/bin/sh
 
 # Number of Points
-b=100
+b=5
 
 # Number of Cluster
-k=4
+k=2
 
-# Number of Processors
-p=5
+# Number of Processes must be (k + 1)
+p=3
 
 # echo ********GENERATING $b INPUT POINTS EACH IN $k CLUSTERS 
 python ./DataGeneratorScripts/randomclustergen/generaterawdata.py -c $k  -p $b -o input/data_points.csv
