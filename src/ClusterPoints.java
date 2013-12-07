@@ -61,16 +61,19 @@ public class ClusterPoints {
 			int[] point2clusterMaster = new int[numPoints];
 			int[] point2clusterSlave = new int[numPointsSlave];
 			int[] startSignal = new int[1];
-
+			
+			// slave processes here
 			if (myRank != 0) {
-				// start computation only after receive start signal from master
+				// get centroids from master
 				MPI.COMM_WORLD.Recv(centroids, 0, numCentroids, MPI.OBJECT, 0, 0);
 
+				// calculate the nearest centroid for every point in slave's range
 				for (int j = 0; j < numPointsSlave; j++) {
 					point2clusterSlave[j] = getNearestCentroid(points
 							.get(((myRank - 1) * numPointsSlave) + j));
 				}
 
+				// send the result back to master
 				MPI.COMM_WORLD.Send(point2clusterSlave, 0, numPointsSlave, MPI.INT, 0, 100);
 
 //				String debuginfo = "\nSLAVE************ iteration" + i + "from" + myRank + "\n";
@@ -80,16 +83,20 @@ public class ClusterPoints {
 //
 //				System.out.println(debuginfo);
 				
+				// get a cluster of points from master and recalculate the centroid
 				MPI.COMM_WORLD.Recv(oneCluster, 0, 1, MPI.OBJECT, 0, 1);
 				oneCentroid[0] = recalculateCentroid(oneCluster[0]);
 				MPI.COMM_WORLD.Send(oneCentroid, 0, 1, MPI.OBJECT, 0, 99);
 
-			} else {
-				// just send the start signal to eash slave
+			} 
+			// master process here
+			else {
+				// send centroids to every slave
 				for (senderRank = 1; senderRank < size; senderRank++) {
 					MPI.COMM_WORLD.Send(centroids, 0, numCentroids, MPI.OBJECT, senderRank, 0);
 				}
 
+				// get clustering result and glue them together
 				for (senderRank = 1; senderRank < size; senderRank++) {
 
 					Status status = MPI.COMM_WORLD.Recv(point2clusterSlave, 0, numPointsSlave, MPI.INT,
@@ -117,7 +124,7 @@ public class ClusterPoints {
 					clusters[point2clusterMaster[k]].add(points.get(k));
 				}
 				
-				
+				// parallel recalculate centroids
 				for (senderRank = 1; senderRank < size; senderRank++) {
 					oneCluster[0] = clusters[senderRank - 1];
 					MPI.COMM_WORLD.Send(oneCluster, 0, 1, MPI.OBJECT, senderRank, 1);
