@@ -33,8 +33,8 @@ public class ClusterPoints {
 		centroids = new Point[numCluster];
 		int numCentroids = centroids.length;
 		double randomX, randomY;
-		double rangeX = maxX - minX;
-		double rangeY = maxY - minY;
+		rangeX = maxX - minX;
+		rangeY = maxY - minY;
 		for (int i = 0; i < numCentroids; i++) {
 			randomX = minX + random.nextDouble() * rangeX;
 			randomY = minY + random.nextDouble() * rangeY;
@@ -59,8 +59,13 @@ public class ClusterPoints {
 
 			int numPointsSlave = numPoints / (size - 1);
 			int[] point2clusterMaster = new int[numPoints];
+			int[] point2clusterSlave = new int[numPointsSlave];
+			int[] startSignal = new int[1];
+
 			if (myRank != 0) {
-				int[] point2clusterSlave = new int[numPointsSlave];
+				// start computation only after receive start signal from master
+				MPI.COMM_WORLD.Recv(centroids, 0, numCentroids, MPI.OBJECT, 0, 0);
+
 				for (int j = 0; j < numPointsSlave; j++) {
 					point2clusterSlave[j] = getNearestCentroid(points
 							.get(((myRank - 1) * numPointsSlave) + j));
@@ -68,25 +73,66 @@ public class ClusterPoints {
 
 				MPI.COMM_WORLD.Send(point2clusterSlave, 0, numPointsSlave, MPI.INT, 0, 100);
 
+//				String debuginfo = "\nSLAVE************ iteration" + i + "from" + myRank + "\n";
+//				debuginfo += "centorids are:\n";
+//				for (int k = 0; k < numCentroids; k++)
+//					debuginfo += centroids[k] + "\t";
+//
+//				System.out.println(debuginfo);
+
 			} else {
+				// just send the start signal to eash slave
 				for (senderRank = 1; senderRank < size; senderRank++) {
-					int[] point2clusterSlave = new int[numPointsSlave];
+					MPI.COMM_WORLD.Send(centroids, 0, numCentroids, MPI.OBJECT, senderRank, 0);
+				}
+
+				for (senderRank = 1; senderRank < size; senderRank++) {
+
 					Status s = MPI.COMM_WORLD.Recv(point2clusterSlave, 0, numPointsSlave, MPI.INT,
 							MPI.ANY_SOURCE, 100);
-					for (int j = 0; j < numPointsSlave; j++) {
-						point2clusterMaster[((s.source - 1) * numPointsSlave) + j] = point2clusterSlave[j];
+
+					// debug print
+					// String debuginfo = "\nMASTER-------- iteration " + i +
+					// "from" + s.source + '\n';
+					// for (int k = 0; k < point2clusterSlave.length; k++) {
+					// debuginfo += point2clusterSlave[k] + "\t";
+					// }
+
+					for (int k = 0; k < numPointsSlave; k++) {
+						point2clusterMaster[((s.source - 1) * numPointsSlave) + k] = point2clusterSlave[k];
 					}
+
+					// debuginfo += '\n';
+					// for (int k = 0; k < point2clusterMaster.length; k++)
+					// debuginfo += point2clusterMaster[k] + "\t";
+					// System.out.println(debuginfo);
+
 				}
+
+				for (int k = 0; k < numPoints; k++) {
+					clusters[point2clusterMaster[k]].add(points.get(k));
+				}
+
+				// recalculate the each centroid
+				for (int k = 0; k < numCentroids; k++) {
+					centroids[k] = recalculateCentroid(clusters[k]);
+				}
+
+//				String debuginfo = "\n\n\n\n\n\n\n\n\nMASTER------------ iteration" + i
+//						+ "cluster result\n";
+//				for (int k = 0; k < point2clusterMaster.length; k++)
+//					debuginfo += point2clusterMaster[k] + "\t";
+//
+//				debuginfo += "\nMASTER*********** iteration" + i
+//						+ "after centroids recalculation\n";
+//				debuginfo += "centorids are:\n";
+//				for (int k = 0; k < numCentroids; k++)
+//					debuginfo += centroids[k] + "\t";
+//
+//				System.out.println(debuginfo);
+
 			}
 
-			for (int j = 0; j < numPoints; j++) {
-				clusters[point2clusterMaster[j]].add(points.get(j));
-			}
-
-			// recalculate the each centroid
-			for (int j = 0; j < numCentroids; j++) {
-				centroids[j] = recalculateCentroid(clusters[j]);
-			}
 		}
 
 		// write the result into the output file
@@ -133,15 +179,24 @@ public class ClusterPoints {
 	 * @return the centroid of a cluster of points
 	 */
 	private Point recalculateCentroid(ArrayList<Point> points) {
-		double sumX = 0;
-		double sumY = 0;
-		for (Point point : points) {
-			sumX += point.getX();
-			sumY += point.getY();
-		}
-
 		int numPoints = points.size();
-		Point centroid = new Point(sumX / numPoints, sumY / numPoints);
+		Point centroid = null;
+
+		if (numPoints == 0) {
+			double randomX, randomY;
+			randomX = minX + random.nextDouble() * rangeX;
+			randomY = minY + random.nextDouble() * rangeY;
+			centroid = new Point(randomX, randomY);
+		} else {
+			double sumX = 0;
+			double sumY = 0;
+			for (Point point : points) {
+				sumX += point.getX();
+				sumY += point.getY();
+			}
+
+			centroid = new Point(sumX / numPoints, sumY / numPoints);
+		}
 		return centroid;
 	}
 
@@ -151,10 +206,12 @@ public class ClusterPoints {
 	private double maxX = Double.MIN_VALUE;
 	private double minY = Double.MAX_VALUE;
 	private double maxY = Double.MIN_VALUE;
+	private double rangeX = 0.0;
+	private double rangeY = 0.0;
 
 	@SuppressWarnings("unused")
 	private int numCluster = 2;
-	private int numInterations = 10;
+	private int numInterations = 100;
 	private Point[] centroids;
 	private ArrayList<Point>[] clusters;
 }

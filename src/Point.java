@@ -1,5 +1,8 @@
-public class Point {
+import java.io.Serializable;
 
+public class Point implements Serializable{
+
+	private static final long serialVersionUID = -7611757236487737038L;
 	public Point() {
 
 	}

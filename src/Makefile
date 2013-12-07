@@ -15,5 +15,7 @@ build: classes
 
 classes: $(CLASSES:.java=.class)
 
+mpi: mpijavac Point.java ReadCSV.java ClusterPoints.java ClusterDNA.java Kmeans.java
+
 clean:
 	$(RM) ../bin/*.class
