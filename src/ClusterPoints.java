@@ -79,6 +79,10 @@ public class ClusterPoints {
 //					debuginfo += centroids[k] + "\t";
 //
 //				System.out.println(debuginfo);
+				
+				MPI.COMM_WORLD.Recv(oneCluster, 0, 1, MPI.OBJECT, 0, 1);
+				oneCentroid[0] = recalculateCentroid(oneCluster[0]);
+				MPI.COMM_WORLD.Send(oneCentroid, 0, 1, MPI.OBJECT, 0, 99);
 
 			} else {
 				// just send the start signal to eash slave
@@ -88,7 +92,7 @@ public class ClusterPoints {
 
 				for (senderRank = 1; senderRank < size; senderRank++) {
 
-					Status s = MPI.COMM_WORLD.Recv(point2clusterSlave, 0, numPointsSlave, MPI.INT,
+					Status status = MPI.COMM_WORLD.Recv(point2clusterSlave, 0, numPointsSlave, MPI.INT,
 							MPI.ANY_SOURCE, 100);
 
 					// debug print
@@ -99,7 +103,7 @@ public class ClusterPoints {
 					// }
 
 					for (int k = 0; k < numPointsSlave; k++) {
-						point2clusterMaster[((s.source - 1) * numPointsSlave) + k] = point2clusterSlave[k];
+						point2clusterMaster[((status.source - 1) * numPointsSlave) + k] = point2clusterSlave[k];
 					}
 
 					// debuginfo += '\n';
@@ -112,11 +116,22 @@ public class ClusterPoints {
 				for (int k = 0; k < numPoints; k++) {
 					clusters[point2clusterMaster[k]].add(points.get(k));
 				}
+				
+				
+				for (senderRank = 1; senderRank < size; senderRank++) {
+					oneCluster[0] = clusters[senderRank - 1];
+					MPI.COMM_WORLD.Send(oneCluster, 0, 1, MPI.OBJECT, senderRank, 1);
+				}
+				
+				for (senderRank = 1; senderRank < size; senderRank++) {
+					Status status = MPI.COMM_WORLD.Recv(oneCentroid, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, 99);
+					centroids[status.source - 1] = oneCentroid[0];
+				}
 
 				// recalculate the each centroid
-				for (int k = 0; k < numCentroids; k++) {
+				/*for (int k = 0; k < numCentroids; k++) {
 					centroids[k] = recalculateCentroid(clusters[k]);
-				}
+				}*/
 
 //				String debuginfo = "\n\n\n\n\n\n\n\n\nMASTER------------ iteration" + i
 //						+ "cluster result\n";
@@ -213,5 +228,9 @@ public class ClusterPoints {
 	private int numCluster = 2;
 	private int numInterations = 100;
 	private Point[] centroids;
+	private Point[] oneCentroid = new Point[1];
 	private ArrayList<Point>[] clusters;
+	@SuppressWarnings("unchecked")
+	private ArrayList<Point>[] oneCluster = new ArrayList[1];
+
 }
